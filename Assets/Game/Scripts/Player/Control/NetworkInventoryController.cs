@@ -1,6 +1,6 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Game.Scripts.Network.EventBus;
-using Game.Scripts.Network.PayloadTransfer;
 using Game.Scripts.Player.Control.Data;
 using Game.Scripts.Player.Inventory;
 using Game.Scripts.Player.Inventory.Items;
@@ -110,7 +110,10 @@ namespace Game.Scripts.Player.Control
             
             var item = NetworkObjectResolver.Resolve<BaseItem>(command.ItemId);
             if (item == null)
+            {
+                Debug.LogWarning($"Cannot drop item. Cannot find item with id {command.ItemId}");
                 return;
+            }
 
             if (NetworkServer.active && command.CommandToServerForConfirm)
                 DropItemServerCommand(command, item);
@@ -118,7 +121,7 @@ namespace Game.Scripts.Player.Control
                 DropItemClientCommand(command, item);
         }
         
-        private void DropItemServerCommand(PlayerDropItemCommand command, BaseItem item)
+        private void DropItemServerCommand(PlayerDropItemCommand command, [NotNull] BaseItem item)
         {
             int serverIndex = _inventory.GetIndex(item);
             _inventory.TryRemove(item);
@@ -139,11 +142,8 @@ namespace Game.Scripts.Player.Control
                 true);
         }
         
-        private void DropItemClientCommand(PlayerDropItemCommand command, BaseItem item)
+        private void DropItemClientCommand(PlayerDropItemCommand command, [NotNull] BaseItem item)
         {
-            if (item == null)
-                return;
-            
             _inventory.TryRemove(item);
             item.NetworkRigidbody.SyncForceCommand();
         }

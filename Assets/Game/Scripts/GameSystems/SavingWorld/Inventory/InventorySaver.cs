@@ -16,7 +16,6 @@ using Zenject;
 
 namespace Game.Scripts.GameSystems.SavingWorld.Inventory
 {
-    //TODO: Refactor this later
     [RequireComponent(typeof(PlayerMainDataComponents))]
     public class InventorySaver : NetworkBehaviour, IPlayerSavingComponent
     {
@@ -87,6 +86,7 @@ namespace Game.Scripts.GameSystems.SavingWorld.Inventory
                             transform.position,
                             Quaternion.identity),
                         new AddItemAfterSpawnCommand(_player.Identity.netId));
+                    
                     if (instanceIdentity.TryGetComponent(out BaseItem item))
                         item.LoadData(reader);
 
@@ -110,9 +110,9 @@ namespace Game.Scripts.GameSystems.SavingWorld.Inventory
                     {
                         networkWriter.WriteUInt(itemId);
                     }
-                        
                 }
             }
+            
             ApplyDataClientRpc(networkWriter.ToArray());
         }
 
@@ -182,7 +182,7 @@ namespace Game.Scripts.GameSystems.SavingWorld.Inventory
                 yield return null;
             }
             
-            _player.NetworkInventorySync.ApplyData(itemStacks);
+            _player.Inventory.ApplyData(itemStacks);
         }
     }
 }

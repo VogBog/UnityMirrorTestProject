@@ -12,7 +12,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
         public bool InUse { get; set; }
         
         void OnStartUsing(UseToolCommand command);
-        void ActivateUsingEffect(UseToolCommand command);
+        bool ActivateUsingEffect(UseToolCommand command);
         void OnStopUsing(UseToolCommand command);
     }
 }

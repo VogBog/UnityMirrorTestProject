@@ -72,7 +72,7 @@ namespace Game.Scripts.GameSystems.Factories
         {
             message.SetFactoryItemId(objectId);
             Invoke(message, true);
-            _serverPublish.SendToPlayersExcludeServer(message);
+            _serverPublish.SendToPlayersExcludeServer(message); //-> InvokeAfterSpawnClientRpc
         }
 
         public void SendBeforeDestroy<T>(T message, NetworkIdentity obj, Action destroy)
@@ -90,7 +90,7 @@ namespace Game.Scripts.GameSystems.Factories
             
             obj.gameObject.SetActive(false);
             _waitForDestroy.Add(obj.netId, (0, StartCoroutine(WaitForDestroyRoutine(obj.netId)), destroy));
-            _serverPublish.SendToPlayersExcludeServer(message);
+            _serverPublish.SendToPlayersExcludeServer(message); //-> InvokeBeforeDestroyClientRpc
         }
 
         private void Invoke<T>(T message, bool isAfterSpawn)

@@ -16,13 +16,13 @@ namespace Game.Scripts.Player.Inventory
         private void OnEnable()
         {
             _factory.RegisterAfterSpawnHandler<AddItemAfterSpawnCommand>(OnAddCommandReceived);
-            _factory.RegisterAfterSpawnHandler<RemoveItemBeforeDestroyCommand>(OnRemoveCommandReceived);
+            _factory.RegisterBeforeDestroyHandler<RemoveItemBeforeDestroyCommand>(OnRemoveCommandReceived);
         }
 
         private void OnDisable()
         {
             _factory.UnregisterAfterSpawnHandler<AddItemAfterSpawnCommand>();
-            _factory.UnregisterAfterSpawnHandler<RemoveItemBeforeDestroyCommand>();
+            _factory.UnregisterBeforeDestroyHandler<RemoveItemBeforeDestroyCommand>();
         }
 
         private void OnRemoveCommandReceived(RemoveItemBeforeDestroyCommand command)

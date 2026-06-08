@@ -7,22 +7,21 @@ using Zenject;
 
 namespace Game.Scripts.Player
 {
-    [RequireComponent(typeof(NetworkIdentity))]
-    public class PlayerCharacteristics : MonoBehaviour, IPlayerSavingComponent
+    public class PlayerCharacteristics : NetworkBehaviour, IPlayerSavingComponent
     {
         [SerializeField] private PlayerScriptableData _data;
         
         private IEventBus _eventBus;
-        private NetworkIdentity _networkIdentity;
 
+        [field: SyncVar(hook = nameof(OnStaminaChanged))]
         public float Stamina { get; private set; }
+
         public float MaxStamina { get; private set; }
 
         [Inject]
         private void Construct(IEventBus eventBus)
         {
             _eventBus = eventBus;
-            _networkIdentity = GetComponent<NetworkIdentity>();
             
             Stamina = _data.Stamina;
             MaxStamina = Stamina;
@@ -39,8 +38,9 @@ namespace Game.Scripts.Player
 
         public void SetStamina(float amount)
         {
+            float oldStamina = Stamina;
             Stamina = Mathf.Clamp(amount, 0, MaxStamina);
-            _eventBus.Publish(new PlayerCharacteristicsChangedEvent(this, _networkIdentity));
+            OnStaminaChanged(oldStamina, Stamina);
         }
 
         public void SaveData(BinaryWriter writer)
@@ -55,6 +55,11 @@ namespace Game.Scripts.Player
             MaxStamina = reader.ReadSingle();
             
             SetStamina(Stamina);
+        }
+
+        private void OnStaminaChanged(float oldValue, float newValue)
+        {
+            _eventBus.Publish(new PlayerCharacteristicsChangedEvent(this, netIdentity));
         }
     }
 }

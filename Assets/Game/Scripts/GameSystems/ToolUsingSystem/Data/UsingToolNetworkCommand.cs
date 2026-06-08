@@ -11,25 +11,19 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem.Data
         public Vector3 LookDirection;
         public bool IsUsing;
         public int Type;
-        public int Durability;
-        public float Stamina;
 
         public UsingToolNetworkCommand(
             uint playerId,
             uint itemId,
             Vector3 lookDirection,
             bool isUsing,
-            int type,
-            int durability,
-            float stamina)
+            int type)
         {
             PlayerId = playerId;
             ItemId = itemId;
             LookDirection = lookDirection;
             IsUsing = isUsing;
             Type = type;
-            Durability = durability;
-            Stamina = stamina;
         }
 
         public void Serialize(NetworkWriter writer)
@@ -39,8 +33,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem.Data
             writer.WriteVector3(LookDirection);
             writer.WriteBool(IsUsing);
             writer.WriteInt(Type);
-            writer.WriteInt(Durability);
-            writer.WriteFloat(Stamina);
         }
 
         public void Deserialize(NetworkReader reader)
@@ -50,8 +42,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem.Data
             LookDirection = reader.ReadVector3();
             IsUsing = reader.ReadBool();
             Type = reader.ReadInt();
-            Durability = reader.ReadInt();
-            Stamina = reader.ReadFloat();
         }
     }
 }

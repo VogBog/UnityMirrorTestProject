@@ -56,7 +56,7 @@ namespace Game.Scripts.Ui.Inventory
 
         private void OnToolDataChanged(ToolDataChangedEvent ev)
         {
-            if (!_playerRepository.IsMyPlayer(ev.PlayerComponents.Identity))
+            if (ev.PlayerComponents == null || !_playerRepository.IsMyPlayer(ev.PlayerComponents.Identity))
                 return;
             
             if (ev.PlayerComponents.Inventory.ChosenObject != ev.Item)

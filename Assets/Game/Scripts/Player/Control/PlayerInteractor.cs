@@ -77,12 +77,10 @@ namespace Game.Scripts.Player.Control
                     interactableId = networkIdentity.netId;
                 }
                 
-                Debug.Log($"Interacted with {interactableId}");
                 onInteract.Invoke(interactableId, interactable);
                 return true;
             }
 
-            Debug.Log($"Interact with nothing");
             return false;
         }
         
@@ -95,7 +93,8 @@ namespace Game.Scripts.Player.Control
             {
                 if (isServer)
                 {
-                    interactable.ServerInteract(_player);
+                    if (!interactable.ServerInteract(_player))
+                        return;
                     
                     _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
                         netId,
@@ -107,7 +106,9 @@ namespace Game.Scripts.Player.Control
                 }
                 else
                 {
-                    interactable.ClientInteractPrediction(_player);
+                    if (!interactable.ClientInteractPrediction(_player))
+                        return;
+                    
                     NetworkClient.Send(PlayerActionCommand.CreateForPlayer(
                         netId,
                         new PlayerInteractionCommand(
@@ -153,6 +154,12 @@ namespace Game.Scripts.Player.Control
                     item?.transform.position ?? Vector3.zero,
                     item?.transform.rotation ?? Quaternion.identity));
             
+            if (item == null)
+            {
+                Debug.LogError($"Cannot interact. Cannot find item with id {command.ItemId}");
+                _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
+            }
+            
             bool interacted = TryInteractLocal(command.LookDirection, (id, interactable) =>
             {
                 if (command.ItemId != id)
@@ -160,8 +167,12 @@ namespace Game.Scripts.Player.Control
                     _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
                     return;
                 }
-                
-                interactable.ServerInteract(_player);
+
+                if (!interactable.ServerInteract(_player))
+                {
+                    _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
+                    return;
+                }
 
                 _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
                     netId,

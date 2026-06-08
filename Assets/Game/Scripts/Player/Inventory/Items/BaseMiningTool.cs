@@ -8,14 +8,20 @@ namespace Game.Scripts.Player.Inventory.Items
     {
         [Inject] private IMiningSystem _miningSystem;
 
-        public override void ActivateUsingEffect(UseToolCommand command)
+        public override bool ActivateUsingEffect(UseToolCommand command)
         {
-            if (command.Type is UsingToolCommandType.ToServer &&
-                NetworkIdentity.isServer &&
-                _miningSystem.TryMine(command.Player.Eyes.transform.position, command.LookDirection, out var ore))
+            if (_miningSystem.TryMine(command.Player.Eyes.transform.position, command.LookDirection, out var ore))
             {
-                _miningSystem.MineOre(command.Player.Identity.netId, ore);
+                if (command.Type is UsingToolCommandType.ToServer &&
+                    NetworkIdentity.isServer)
+                {
+                    _miningSystem.MineOre(command.Player.Identity.netId, ore);
+                }
+
+                return true;
             }
+
+            return false;
         }
     }
 }

@@ -68,7 +68,7 @@ namespace Game.Scripts.Network.Physics
 
         public void TrySync()
         {
-            if (!isServer)
+            if (!isServer || !enabled)
                 return;
             
             var position = transform.position;

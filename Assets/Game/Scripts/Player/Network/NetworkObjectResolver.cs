@@ -25,6 +25,7 @@ namespace Game.Scripts.Player.Network
             return networkIdentity.GetComponent<T>();
         }
 
+        [NotNull]
         public static T ResolveOrException<T>(uint netId)
             where T : class
         {

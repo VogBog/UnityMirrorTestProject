@@ -55,9 +55,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
                 command.Item.NetworkIdentity.netId,
                 command.LookDirection,
                 true,
-                0,
-                command.Tool.Durability,
-                command.Player.Characteristics.Stamina);
+                0);
             
             if (NetworkServer.active)
             {
@@ -95,9 +93,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
                 startCommand.Item.NetworkIdentity.netId,
                 Vector3.zero,
                 false,
-                0,
-                startCommand.Tool.Durability,
-                startCommand.Player.Characteristics.Stamina);
+                0);
 
             if (NetworkServer.active)
             {
@@ -136,9 +132,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
                 cause.Tool.Durability > 0 ? cause.Item.NetworkIdentity.netId : 0,
                 cause.LookDirection,
                 false,
-                (int)UsingToolCommandType.Confirm,
-                cause.Tool.Durability,
-                cause.Player.Characteristics.Stamina);
+                (int)UsingToolCommandType.Confirm);
             
             _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));
             
@@ -175,8 +169,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
         private void StartUsingToolServerCommand(UsingToolNetworkCommand networkCommand)
         {
             var command = ConvertCommandToLocal(networkCommand);
-            networkCommand.Durability = command.Tool.Durability;
-            networkCommand.Stamina = command.Player.Characteristics.Stamina;
             
             if (!_toolUsingSystem.TryStartUsingTool(command))
             {
@@ -200,12 +192,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
         private void CancelUsingTool(UsingToolNetworkCommand networkCommand)
         {
             var command = ConvertCommandToLocal(networkCommand);
-            _toolUsingSystem.TryStartUsingTool(command); //With cancellation
-
-            command.Tool.Durability = networkCommand.Durability;
-            command.Player.Characteristics.SetStamina(networkCommand.Stamina);
-            var ev = new ToolDataChangedEvent(command.Player, command.Item, command.Tool);
-            _eventBus.Publish(ev);
+            _toolUsingSystem.StopUsingTool(networkCommand.PlayerId, UsingToolCommandType.Cancel);
         }
 
         private void StopUsingToolServerCommand(UsingToolNetworkCommand networkCommand)
@@ -216,9 +203,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
             var player = _playerRepository.GetPlayerObject(networkCommand.PlayerId);
             var tool = NetworkObjectResolver.Resolve<ITool>(networkCommand.ItemId);
             
-            networkCommand.Stamina = player.Characteristics.Stamina;
-            networkCommand.Durability = tool?.Durability ?? networkCommand.Durability;
-            
             networkCommand.Type = (int)UsingToolCommandType.Confirm;
             _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));
         }
@@ -228,17 +212,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
             if (!_playerRepository.IsMyPlayer(networkCommand.PlayerId))
             {
                 _toolUsingSystem.StopUsingTool(networkCommand.PlayerId, UsingToolCommandType.Confirm);
-            }
-            else
-            {
-                var command = ConvertCommandToLocal(networkCommand);
-                command.Player.Characteristics.SetStamina(networkCommand.Stamina);
-                if (command.Tool != null && networkCommand.Durability > 0)
-                {
-                    command.Tool.Durability = networkCommand.Durability;
-                    var ev = new ToolDataChangedEvent(command.Player, command.Item, command.Tool);
-                    _eventBus.Publish(ev);
-                }
             }
         }
 

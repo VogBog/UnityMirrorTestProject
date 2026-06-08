@@ -92,6 +92,8 @@ namespace Game.Scripts.Player.Inventory.Items
         public virtual void OnChoose(PlayerMainDataComponents player)
         {
             _object.SetActive(true);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
         }
 
         public virtual void OnNotChoose(PlayerMainDataComponents player)

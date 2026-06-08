@@ -2,22 +2,30 @@ using System.IO;
 using Game.Scripts.Animations;
 using Game.Scripts.GameSystems.ToolUsingSystem;
 using Game.Scripts.GameSystems.ToolUsingSystem.Data;
+using Game.Scripts.Network.EventBus;
 using Mirror;
+using Zenject;
 
 namespace Game.Scripts.Player.Inventory.Items
 {
     public abstract class BaseTool : BaseItem, ITool
     {
+        private IEventBus _eventBus;
         private ToolAnimator _animator;
         private bool _loaded;
 
         [SyncVar] private int _durability;
-        
+
         public abstract ToolScriptableData ToolInitData { get; }
+
         public int Durability
         {
             get => _durability;
-            set => _durability = value;
+            set
+            {
+                _durability = value;
+                _eventBus.Publish(new ToolDataChangedEvent(OwnerPlayer, this, this));
+            }
         }
         
         public int MaxDurability { get; private set; }
@@ -26,8 +34,10 @@ namespace Game.Scripts.Player.Inventory.Items
         public bool CanUse => Durability > 0;
         public bool InUse { get; set; }
 
-        protected virtual void Start()
+        [Inject]
+        private void Construct(IEventBus eventBus)
         {
+            _eventBus = eventBus;
             _animator = GetComponentInChildren<ToolAnimator>(true);
 
             if (!_loaded)
@@ -45,7 +55,7 @@ namespace Game.Scripts.Player.Inventory.Items
             _animator?.SetUsing(true);
         }
 
-        public abstract void ActivateUsingEffect(UseToolCommand command);
+        public abstract bool ActivateUsingEffect(UseToolCommand command);
 
         public virtual void OnStopUsing(UseToolCommand command)
         {

@@ -99,14 +99,13 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
 
                 var useToolCommand = new UseToolCommand(
                     command.Player, command.LookDirection, command.ToolUsingSystem, command.Type);
-                command.Tool.ActivateUsingEffect(useToolCommand);
+                
+                if (!command.Tool.ActivateUsingEffect(useToolCommand))
+                    continue;
 
                 command.Tool.Durability--;
                 if (command.Tool.UseStamina > 0f)
                     command.Player.Characteristics.DecreaseStamina(command.Tool.UseStamina);
-
-                var ev = new ToolDataChangedEvent(command.Player, command.Item, command.Tool);
-                _eventBus.Publish(ev);
             }
             
             command.ToolUsingSystem?.StopUsingToolCauseOfCancel(command);

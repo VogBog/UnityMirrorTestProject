@@ -20,12 +20,15 @@ namespace Game.Scripts.Player.Inventory.Items
                 _characteristics = command.Player.Characteristics;
         }
 
-        public override void ActivateUsingEffect(UseToolCommand command)
+        public override bool ActivateUsingEffect(UseToolCommand command)
         {
             if (command.Type is UsingToolCommandType.ToServer or UsingToolCommandType.ClientPrediction)
             {
                 _characteristics?.IncreaseStamina(_data.AddStamina);
+                return true;
             }
+
+            return false;
         }
     }
 }
