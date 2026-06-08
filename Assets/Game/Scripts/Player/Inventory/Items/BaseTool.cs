@@ -10,9 +10,16 @@ namespace Game.Scripts.Player.Inventory.Items
     {
         private ToolAnimator _animator;
         private bool _loaded;
+
+        [SyncVar] private int _durability;
         
         public abstract ToolScriptableData ToolInitData { get; }
-        public int Durability { get; set; }
+        public int Durability
+        {
+            get => _durability;
+            set => _durability = value;
+        }
+        
         public int MaxDurability { get; private set; }
         public float UsingTime { get; private set; }
         public float UseStamina { get; private set; }

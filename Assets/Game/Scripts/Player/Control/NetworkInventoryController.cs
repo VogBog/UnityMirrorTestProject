@@ -79,8 +79,6 @@ namespace Game.Scripts.Player.Control
 
         private void OnItemDropped(int index, BaseItem removed)
         {
-            var payload = new NetworkPayload();
-            
             if (!NetworkServer.active)
             {
                 NetworkClient.Send(PlayerActionCommand.CreateForPlayer(
@@ -90,13 +88,10 @@ namespace Game.Scripts.Player.Control
                         removed.NetworkIdentity.netId,
                         index,
                         _networkIdentity.transform.forward,
-                        payload,
                         true)));
             }
             else
             {
-                
-                
                 _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
                     _networkIdentity.netId,
                     new PlayerDropItemCommand(
@@ -104,7 +99,6 @@ namespace Game.Scripts.Player.Control
                         removed.NetworkIdentity.netId,
                         index,
                         _networkIdentity.transform.forward,
-                        payload,
                         false)));
             }
         }
@@ -132,10 +126,6 @@ namespace Game.Scripts.Player.Control
             
             if (serverIndex != command.Index)
                 UpdateInventorySnapshot();
-            
-            var payload = new NetworkPayload();
-            if (item is INetworkSerializable serializable)
-                payload.SerializeBoxed(serializable);
                 
             _serverPublishing.SendToPlayersExcludeOne(PlayerActionCommand.CreateForPlayer(
                 command.PlayerId,
@@ -144,7 +134,6 @@ namespace Game.Scripts.Player.Control
                     command.ItemId,
                     command.Index,
                     command.LookDirection,
-                    payload,
                     false)),
                 command.PlayerId,
                 true);

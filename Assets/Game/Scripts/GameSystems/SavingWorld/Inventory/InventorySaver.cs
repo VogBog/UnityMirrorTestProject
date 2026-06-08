@@ -4,8 +4,6 @@ using System.IO;
 using Game.Scripts.GameSystems.Factories;
 using Game.Scripts.GameSystems.Factories.Data;
 using Game.Scripts.GameSystems.SavingWorld.Players;
-using Game.Scripts.GameSystems.ToolUsingSystem;
-using Game.Scripts.GameSystems.ToolUsingSystem.Data;
 using Game.Scripts.Network.EventBus;
 using Game.Scripts.Player;
 using Game.Scripts.Player.Inventory;
@@ -185,45 +183,6 @@ namespace Game.Scripts.GameSystems.SavingWorld.Inventory
             }
             
             _player.NetworkInventorySync.ApplyData(itemStacks);
-            if (isOwned)
-                CmdSyncItems();
-        }
-
-        [Command(requiresAuthority = false)]
-        private void CmdSyncItems()
-        {
-            foreach (var itemStack in _data)
-            {
-                if (itemStack.Items == null || itemStack.Items.Length == 0)
-                    continue;
-                foreach (var itemId in itemStack.Items)
-                {
-                    var item = NetworkObjectResolver.Resolve<BaseItem>(itemId);
-                    if (item == null)
-                        continue;
-                    var writer = new NetworkWriter();
-                    item.OnSerialize(writer, true);
-                    SyncItemDataClientRpc(itemId, writer.ToArray());
-                }
-            }
-        }
-
-        [ClientRpc]
-        private void SyncItemDataClientRpc(uint itemId, byte[] payload)
-        {
-            var item = NetworkObjectResolver.Resolve<BaseItem>(itemId);
-            if (item == null)
-                return;
-
-            var networkReader = new NetworkReader(payload);
-            item.OnDeserialize(networkReader, true);
-
-            //TODO: this is bad solution, rewrite later
-            if (item is ITool tool)
-            {
-                var ev = new ToolDataChangedEvent(_player, item, tool);
-                _eventBus.Publish(ev);
-            }
         }
     }
 }

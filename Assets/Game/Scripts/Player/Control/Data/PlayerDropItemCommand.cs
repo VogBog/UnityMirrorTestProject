@@ -10,7 +10,6 @@ namespace Game.Scripts.Player.Control.Data
         public uint ItemId;
         public int Index;
         public Vector3 LookDirection;
-        public NetworkPayload ItemData;
 
         public bool CommandToServerForConfirm;
 
@@ -19,14 +18,12 @@ namespace Game.Scripts.Player.Control.Data
             uint itemId,
             int index,
             Vector3 lookDirection,
-            NetworkPayload itemData,
             bool commandToServerForConfirm)
         {
             PlayerId = playerId;
             ItemId = itemId;
             Index = index;
             LookDirection = lookDirection;
-            ItemData = itemData;
             
             CommandToServerForConfirm = commandToServerForConfirm;
         }
@@ -38,10 +35,6 @@ namespace Game.Scripts.Player.Control.Data
             writer.WriteInt(Index);
             writer.WriteVector3(LookDirection);
             
-            writer.WriteBool(ItemData.Data != null);
-            if (ItemData.Data != null)
-                writer.WriteBytesAndSize(ItemData.Data);
-            
             writer.WriteBool(CommandToServerForConfirm);
         }
 
@@ -51,10 +44,6 @@ namespace Game.Scripts.Player.Control.Data
             ItemId = reader.ReadUInt();
             Index = reader.ReadInt();
             LookDirection = reader.ReadVector3();
-            
-            bool hasItemData = reader.ReadBool();
-            if (hasItemData)
-                ItemData.Data = reader.ReadBytesAndSize();
             
             CommandToServerForConfirm = reader.ReadBool();
         }
