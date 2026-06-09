@@ -50,31 +50,6 @@ namespace Game.Scripts.Player.Inventory
             return true;
         }
 
-        public bool TryInsert(int index, BaseItem item)
-        {
-            if (index < 0 || index >= Capacity)
-                return false;
-            
-            if (_items[index].Items == null)
-            {
-                _items[index] = new ItemStack(item);
-                OnItemAdded(item, index);
-                return true;
-            }
-
-            var stack = _items[index];
-            if (!item.GetType().IsEquivalentTo(stack.Items[0].GetType()))
-                return false;
-
-            if (stack.Items.Count >= stack.MaxStack)
-                return false;
-            
-            stack.Items.Add(item);
-            OnItemAdded(item, index);
-
-            return true;
-        }
-
         public bool TryRemove(BaseItem item)
         {
             for (int i = 0; i < _items.Length; i++)

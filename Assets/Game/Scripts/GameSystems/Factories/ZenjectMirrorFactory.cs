@@ -8,7 +8,6 @@ using Zenject;
 
 namespace Game.Scripts.GameSystems.Factories
 {
-    [RequireComponent(typeof(ObjectFactoryEventsProcessor))]
     public class ZenjectMirrorFactory : NetworkBehaviour, INetworkObjectFactory
     {
         [SerializeField] private PrefabsListScriptable _prefabs;
@@ -19,7 +18,6 @@ namespace Game.Scripts.GameSystems.Factories
         private readonly Dictionary<GameObject, uint> _prefabToId = new();
         private readonly Dictionary<uint, GameObject> _idToPrefab = new();
         private readonly Dictionary<uint, List<NetworkIdentity>> _spawned = new();
-        private ObjectFactoryEventsProcessor _eventsProcessor;
 
         public event Action<ObjectSpawnedEvent> Spawned;
         public event Action<ObjectDespawnedEvent> Despawned; 
@@ -32,8 +30,6 @@ namespace Game.Scripts.GameSystems.Factories
             IGameStarter gameStarter)
         {
             _container = container;
-            
-            _eventsProcessor = GetComponent<ObjectFactoryEventsProcessor>();
             
             if (NetworkClient.active)
             {
@@ -87,26 +83,6 @@ namespace Game.Scripts.GameSystems.Factories
         public NetworkIdentity[] GetRegisteredPrefabs() => _prefabs.Prefabs;
         
         public List<NetworkIdentity> GetSpawned(uint prefabId) => _spawned.GetValueOrDefault(prefabId);
-
-        public void RegisterAfterSpawnHandler<T>(Action<T> handler) where T : struct, IFactoryMessage
-        {
-            _eventsProcessor.RegisterHandler(handler, true);
-        }
-
-        public void RegisterBeforeDestroyHandler<T>(Action<T> handler) where T : struct, IFactoryMessage
-        {
-            _eventsProcessor.RegisterHandler(handler, false);
-        }
-
-        public void UnregisterAfterSpawnHandler<T>() where T : struct, IFactoryMessage
-        {
-            _eventsProcessor.UnregisterHandler<T>(true);
-        }
-
-        public void UnregisterBeforeDestroyHandler<T>() where T : struct, IFactoryMessage
-        {
-            _eventsProcessor.UnregisterHandler<T>(false);
-        }
 
         private void AddSpawned(uint assetId, NetworkIdentity identity)
         {
@@ -162,15 +138,6 @@ namespace Game.Scripts.GameSystems.Factories
         }
 
         [Server]
-        public NetworkIdentity InstantiateAndSpawnServer<T>(InstantiateAndSpawnCommand command, T afterSpawnCommand)
-            where T : struct, IFactoryMessage
-        {
-            var instance = InstantiateAndSpawnServer(command);
-            _eventsProcessor.SendAfterSpawn(afterSpawnCommand, instance.netId);
-            return instance;
-        }
-
-        [Server]
         public void DespawnAndDestroyServer(GameObject instance)
         {
             if (!instance.TryGetComponent(out NetworkIdentity networkIdentity))
@@ -180,19 +147,6 @@ namespace Game.Scripts.GameSystems.Factories
             Despawned?.Invoke(despawnEvent);
             NetworkServer.Destroy(instance);
             RemoveSpawned(networkIdentity);
-        }
-
-        [Server]
-        public void DespawnAndDestroyServerWithEvent<T>(GameObject instance, T beforeDestroyEvent)
-            where T : struct, IFactoryMessage
-        {
-            if (!instance.TryGetComponent(out NetworkIdentity networkIdentity))
-                throw new InvalidOperationException($"Cannot despawn object without NetworkIdentity {instance}");
-
-            _eventsProcessor.SendBeforeDestroy(
-                beforeDestroyEvent,
-                networkIdentity,
-                () => DespawnAndDestroyServer(instance));
         }
         #endregion
         

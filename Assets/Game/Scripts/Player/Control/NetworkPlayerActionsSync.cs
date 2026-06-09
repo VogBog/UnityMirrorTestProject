@@ -12,6 +12,8 @@ namespace Game.Scripts.Player.Control
     {
         private readonly Dictionary<string, Action<PlayerActionCommand>> _handlers = new();
 
+        public const float Timeout = 5f;
+
         public void RegisterHandler<T>(Action<T> handler, Func<T> factory)
             where T : struct, INetworkSerializable
         {
@@ -117,7 +119,8 @@ namespace Game.Scripts.Player.Control
             
             if (!_handlers.TryGetValue(key, out var handler))
             {
-                Debug.LogWarning($"Cannot handle message for type {key}. Handler has not been registered. Skip.");
+                Debug.LogWarning($"Cannot handle message for type {key}. Handler has not been registered. Waiting...");
+                StartCoroutine(InvokeWhenRegistered(key, command));
                 return;
             }
             
@@ -129,6 +132,26 @@ namespace Game.Scripts.Player.Control
             while (identity.netId == 0)
                 yield return null;
             onInitialized.Invoke(identity.netId);
+        }
+
+        private IEnumerator InvokeWhenRegistered(string key, PlayerActionCommand command)
+        {
+            yield return null;
+            float timeout = Timeout - Time.deltaTime;
+            while (timeout >= 0f && !_handlers.ContainsKey(key))
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            if (!_handlers.TryGetValue(key, out var handle))
+            {
+                Debug.LogError($"Cannot handle message for type {key}. Handler has not been registered.");
+                yield break;
+            }
+            
+            Debug.Log($"Handle for type {key} have been find. Invoking...");
+            handle.Invoke(command);
         }
     }
 }

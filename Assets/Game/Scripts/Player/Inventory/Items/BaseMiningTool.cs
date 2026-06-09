@@ -15,7 +15,7 @@ namespace Game.Scripts.Player.Inventory.Items
                 if (command.Type is UsingToolCommandType.ToServer &&
                     NetworkIdentity.isServer)
                 {
-                    _miningSystem.MineOre(command.Player.Identity.netId, ore);
+                    _miningSystem.MineOre(OwnerPlayer, ore);
                 }
 
                 return true;

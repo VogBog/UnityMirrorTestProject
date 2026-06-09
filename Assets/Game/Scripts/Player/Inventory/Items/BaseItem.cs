@@ -27,8 +27,6 @@ namespace Game.Scripts.Player.Inventory.Items
         public abstract BaseItemData BaseItemData { get; }
         public virtual bool DoNotSave => OwnerPlayer != null;
 
-        public const float ThrowForce = 4f;
-
         protected virtual void Awake()
         {
             _networkRigidbody = GetComponent<NetworkRigidbodyPredictable>();
@@ -42,23 +40,12 @@ namespace Game.Scripts.Player.Inventory.Items
 
         public void CancelInteractPrediction(PlayerMainDataComponents player)
         {
-            if (OwnerPlayer != player)
+            if (OwnerPlayer != player || OwnerPlayer == null)
                 return;
             
             var inventory = player.Inventory;
             inventory?.TryRemove(this);
             NetworkRigidbody.SyncForceCommand();
-        }
-
-        public void ClientConfirmInteraction(PlayerMainDataComponents player, bool isOwner)
-        {
-            if (OwnerPlayer == player)
-                return;
-
-            if (OwnerPlayer != null)
-                OwnerPlayer.Inventory.TryRemove(this);
-            
-            player.Inventory.TryAdd(this);
         }
 
         public virtual void OnAddedToInventory(PlayerMainDataComponents player)
@@ -83,7 +70,6 @@ namespace Game.Scripts.Player.Inventory.Items
             _object.SetActive(true);
             _rigidbody.isKinematic = false;
             _networkRigidbody.enabled = true;
-            _networkRigidbody.SetVelocity(player.transform.forward * ThrowForce, Vector3.zero);
             
             CanInteract = true;
             OwnerPlayer = null;

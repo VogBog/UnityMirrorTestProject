@@ -1,6 +1,7 @@
 using Game.Scripts.GameSystems.Factories;
 using Game.Scripts.GameSystems.Factories.Data;
-using Game.Scripts.Player.Inventory.Events;
+using Game.Scripts.Player;
+using Game.Scripts.Player.Inventory.Items;
 using Mirror;
 using UnityEngine;
 using Zenject;
@@ -31,7 +32,7 @@ namespace Game.Scripts.GameSystems.Mining
             return true;
         }
 
-        public void MineOre(uint playerId, IOre ore)
+        public void MineOre(PlayerMainDataComponents player, IOre ore)
         {
             if (!NetworkServer.active)
                 return;
@@ -41,7 +42,9 @@ namespace Game.Scripts.GameSystems.Mining
                 ore.SpawnPosition,
                 Quaternion.identity);
             
-            _factory.InstantiateAndSpawnServer(command, new AddItemAfterSpawnCommand(playerId));
+            var instance = _factory.InstantiateAndSpawnServer(command);
+            if (instance.TryGetComponent(out BaseItem item))
+                player.Inventory.TryAdd(item);
         }
     }
 }

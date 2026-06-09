@@ -7,6 +7,5 @@ namespace Game.Scripts.Player.Interactions
         bool ServerInteract(PlayerMainDataComponents player);
         bool ClientInteractPrediction(PlayerMainDataComponents player);
         void CancelInteractPrediction(PlayerMainDataComponents player);
-        void ClientConfirmInteraction(PlayerMainDataComponents player, bool isOwner);
     }
 }

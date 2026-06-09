@@ -12,7 +12,6 @@ namespace Game.Scripts.Player.Inventory
         int Count { get; }
         
         bool TryAdd(BaseItem item);
-        bool TryInsert(int index, BaseItem item);
         bool TryRemove(BaseItem item);
         bool TryRemoveAt(int index);
         void ChooseAt(int index);

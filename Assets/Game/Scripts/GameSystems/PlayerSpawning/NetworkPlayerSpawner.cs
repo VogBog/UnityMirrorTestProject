@@ -37,7 +37,6 @@ namespace Game.Scripts.GameSystems.PlayerSpawning
 
         private void Awake()
         {
-            _networkObjectFactory.RegisterAfterSpawnHandler<SetPlayerNameCommand>(SetPlayerName);
             _networkObjectFactory.Spawned += OnObjectSpawn;
             _networkObjectFactory.Despawned += OnObjectDespawn;
             
@@ -47,7 +46,6 @@ namespace Game.Scripts.GameSystems.PlayerSpawning
 
         private void OnDestroy()
         {
-            _networkObjectFactory.UnregisterAfterSpawnHandler<SetPlayerNameCommand>();
             _networkObjectFactory.Spawned -= OnObjectSpawn;
             _networkObjectFactory.Despawned -= OnObjectDespawn;
             
@@ -75,13 +73,17 @@ namespace Game.Scripts.GameSystems.PlayerSpawning
                 rotation = preview.Rotation;
             }
 
-            _networkObjectFactory.InstantiateAndSpawnServer(new InstantiateAndSpawnCommand(
+            var instance = _networkObjectFactory.InstantiateAndSpawnServer(new InstantiateAndSpawnCommand(
                     _playerPrefab,
                     position,
                     rotation,
-                    connection),
+                    connection));
 
-                new SetPlayerNameCommand(playerName));
+            if (instance.TryGetComponent(out PlayerMainDataComponents player))
+            {
+                player.Name = playerName;
+                _playersSaver.ApplyPlayerData(player, playerName);
+            }
         }
 
         public void StartGameClient()
@@ -112,14 +114,6 @@ namespace Game.Scripts.GameSystems.PlayerSpawning
         private void OnPlayerSpawnCommandReceived(NetworkConnectionToClient connection, SpawnPlayerCommand command)
         {
             StartGameServer(connection, command.Name);
-        }
-
-        private void SetPlayerName(SetPlayerNameCommand command)
-        {
-            Debug.Log($"SetPlayerName({command.Name})");
-            var player = NetworkObjectResolver.ResolveOrException<PlayerMainDataComponents>(command.FactoryItemId);
-            player.Name = command.Name;
-            _playersSaver.ApplyPlayerData(player, command.Name);
         }
 
         private IEnumerator WaitForMyPlayerSpawn()

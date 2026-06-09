@@ -138,8 +138,8 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
             
             if (cause.Tool.Durability <= 0)
             {
-                _factory.DespawnAndDestroyServerWithEvent(
-                    cause.Item.gameObject, new RemoveItemBeforeDestroyCommand(cause.Player.Identity.netId));
+                cause.Player.Inventory.TryRemove(cause.Item);
+                _factory.DespawnAndDestroyServer(cause.Item.gameObject);
             }
         }
 
@@ -199,9 +199,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
         {
             if (!_toolUsingSystem.StopUsingTool(networkCommand.PlayerId, UsingToolCommandType.ToServer))
                 return;
-
-            var player = _playerRepository.GetPlayerObject(networkCommand.PlayerId);
-            var tool = NetworkObjectResolver.Resolve<ITool>(networkCommand.ItemId);
             
             networkCommand.Type = (int)UsingToolCommandType.Confirm;
             _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));

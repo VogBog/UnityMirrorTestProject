@@ -238,12 +238,12 @@ GameObject:
   - component: {fileID: 2375681333695199451}
   - component: {fileID: 5554745973983768480}
   - component: {fileID: 3798359089202867239}
-  - component: {fileID: 1956864818277701024}
   - component: {fileID: 7036614288301424968}
   - component: {fileID: 2448956189756512638}
   - component: {fileID: 919479515918986854}
   - component: {fileID: 7919463379538785206}
   - component: {fileID: 5975363749274089580}
+  - component: {fileID: 7792106295063372537}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -510,18 +510,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4dfff686d1a45c9af3fc75ecee1dd17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.Inventory.NetworkInventorySync
---- !u!114 &1956864818277701024
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6490507446238516199}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0785c7a0e3dc4df99837a555712cad56, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.Inventory.NetworkInventoryController
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
 --- !u!114 &7036614288301424968
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -566,6 +557,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3927d5e92ecc489eb292fb80777fdc36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.GameSystems.SavingWorld.Inventory.InventorySaver
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
 --- !u!114 &7919463379538785206
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -578,6 +572,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04b6434d9c3c4868a05c180cc25f5af0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.PlayerCharacteristics
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   _data: {fileID: 11400000, guid: 90a2d4dd5def9fa459d9c6bbf6441266, type: 2}
 --- !u!114 &5975363749274089580
 MonoBehaviour:
@@ -591,3 +588,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9bc7e19ca0d4f5a949afb5eb5218bc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.PlayerMainDataComponents
+--- !u!114 &7792106295063372537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6490507446238516199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2c8fba7c78a421ca8cf0344edd3ea9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.Inventory.NetworkInventoryActionsSync

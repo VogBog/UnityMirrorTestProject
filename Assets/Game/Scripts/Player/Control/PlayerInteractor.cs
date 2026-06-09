@@ -93,16 +93,7 @@ namespace Game.Scripts.Player.Control
             {
                 if (isServer)
                 {
-                    if (!interactable.ServerInteract(_player))
-                        return;
-                    
-                    _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
-                        netId,
-                        new PlayerInteractionCommand(
-                            netId,
-                            id,
-                            _camera.forward,
-                            PlayerInteractionCommandType.Confirm)));
+                    interactable.ServerInteract(_player);
                 }
                 else
                 {
@@ -133,10 +124,6 @@ namespace Game.Scripts.Player.Control
                 
                 case PlayerInteractionCommandType.Cancellation:
                     InteractCancellationCommand(command);
-                    break;
-                
-                case PlayerInteractionCommandType.Confirm:
-                    ConfirmInteractCommand(command);
                     break;
             }
         }
@@ -171,16 +158,7 @@ namespace Game.Scripts.Player.Control
                 if (!interactable.ServerInteract(_player))
                 {
                     _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
-                    return;
                 }
-
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
-                    netId,
-                    new PlayerInteractionCommand(
-                        netId,
-                        id,
-                        command.LookDirection,
-                        PlayerInteractionCommandType.Confirm)));
             });
 
             if (!interacted)
@@ -194,15 +172,6 @@ namespace Game.Scripts.Player.Control
             
             interactable.CancelInteractPrediction(_player);
             networkIdentity.transform.SetPositionAndRotation(command.Position, command.Rotation);
-        }
-
-        private void ConfirmInteractCommand(PlayerInteractionCommand command)
-        {
-            if (isServer)
-                return;
-            
-            var interactable = NetworkObjectResolver.ResolveOrException<IInteractable>(command.ItemId);
-            interactable.ClientConfirmInteraction(_player, isOwned);
         }
     }
 }

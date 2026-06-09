@@ -171,12 +171,10 @@ GameObject:
   - component: {fileID: 3741160764625289799}
   - component: {fileID: 1145947202876905538}
   - component: {fileID: 1431471195231421093}
-  - component: {fileID: 1050082913341252726}
   - component: {fileID: 2708001957187012528}
   - component: {fileID: 8500261286838531278}
   - component: {fileID: 8798648255447693956}
   - component: {fileID: 6616285941588819762}
-  - component: {fileID: 4821565199552750339}
   - component: {fileID: 923401986464222649}
   - component: {fileID: 6880127513298772996}
   - component: {fileID: 4687482738931977501}
@@ -309,21 +307,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08f8890f4b5446b3ad458df148a913b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Network.EventBus.LocalEventBus
---- !u!114 &1050082913341252726
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5135749158097114212}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 98c0e0799afd412cb43bdccc2add7f22, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.GameSystems.Factories.ObjectFactoryEventsProcessor
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
 --- !u!114 &2708001957187012528
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -376,18 +359,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abd41e8b9ebc4905b4b6fc7ff624156a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.GameSystems.ToolUsingSystem.NetworkToolUsingSystem
---- !u!114 &4821565199552750339
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5135749158097114212}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 34ab49ad4aa14c46b501ef5bdd2ae6d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.Inventory.NetworkInventoryCommandsExecutor
 --- !u!114 &923401986464222649
 MonoBehaviour:
   m_ObjectHideFlags: 0

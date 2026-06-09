@@ -84,11 +84,13 @@ namespace Game.Scripts.GameSystems.SavingWorld.Inventory
                         new InstantiateAndSpawnCommand(
                             _factory.GetPrefabById(assetId),
                             transform.position,
-                            Quaternion.identity),
-                        new AddItemAfterSpawnCommand(_player.Identity.netId));
-                    
+                            Quaternion.identity));
+
                     if (instanceIdentity.TryGetComponent(out BaseItem item))
+                    {
                         item.LoadData(reader);
+                        _player.Inventory.TryAdd(item);
+                    }
 
                     itemsData[j] = instanceIdentity.netId;
                 }

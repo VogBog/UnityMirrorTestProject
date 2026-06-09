@@ -46,7 +46,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
 
             if (command.Player.Inventory.ChosenObject != command.Item)
             {
-                command.Player.Inventory.ChooseAt(command.Player.Inventory.GetIndex(command.Item));
+                command.Player.Inventory.ChooseAtLocal(command.Player.Inventory.GetIndex(command.Item));
             }
 
             var coroutine = StartCoroutine(UsingToolRoutine(command));
@@ -103,9 +103,12 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
                 if (!command.Tool.ActivateUsingEffect(useToolCommand))
                     continue;
 
-                command.Tool.Durability--;
-                if (command.Tool.UseStamina > 0f)
-                    command.Player.Characteristics.DecreaseStamina(command.Tool.UseStamina);
+                if (command.Type is UsingToolCommandType.ToServer or UsingToolCommandType.ClientPrediction)
+                {
+                    command.Tool.Durability--;
+                    if (command.Tool.UseStamina > 0f)
+                        command.Player.Characteristics.DecreaseStamina(command.Tool.UseStamina);
+                }
             }
             
             command.ToolUsingSystem?.StopUsingToolCauseOfCancel(command);
