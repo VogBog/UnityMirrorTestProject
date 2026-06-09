@@ -1,10 +1,9 @@
-using Game.Scripts.Network.PayloadTransfer;
 using Mirror;
 using UnityEngine;
 
 namespace Game.Scripts.GameSystems.SavingWorld.Players
 {
-    public struct PlayerPreviewData : INetworkSerializable
+    public struct PlayerPreviewData
     {
         public string Name;
         public Vector3 Position;

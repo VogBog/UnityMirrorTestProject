@@ -1,17 +1,13 @@
 using System;
-using System.Collections.Generic;
 using Game.Scripts.Network.EventBus;
-using Game.Scripts.Network.PayloadTransfer;
 using Game.Scripts.Player.Inventory.Events;
 using Game.Scripts.Player.Inventory.Items;
-using Game.Scripts.Player.Network;
-using Mirror;
 using UnityEngine;
 using Zenject;
 
 namespace Game.Scripts.Player.Inventory
 {
-    public class Inventory : MonoBehaviour, IInventory, INetworkSerializable
+    public class Inventory : MonoBehaviour, IInventory
     {
         [SerializeField] private Transform _armTransform;
         
@@ -228,61 +224,6 @@ namespace Game.Scripts.Player.Inventory
             _eventBus.Publish(new ItemRemovedEvent(
                 _player, item, index));
             _eventBus.Publish(new InventoryChangedEvent(_player));
-        }
-
-        public void Serialize(NetworkWriter writer)
-        {
-            writer.WriteInt(ChosenIndex);
-            foreach (var itemStack in _items)
-            {
-                if (itemStack.Items == null)
-                {
-                    writer.WriteBool(false);
-                }
-                else
-                {
-                    writer.WriteBool(true);
-                    writer.WriteInt(itemStack.MaxStack);
-                    writer.WriteInt(itemStack.Items.Count);
-                    foreach (var item in itemStack.Items)
-                    {
-                        writer.WriteUInt(item.NetworkIdentity.netId);
-                    }
-                }
-            }
-        }
-
-        public void Deserialize(NetworkReader reader)
-        {
-            int chooseIndex = reader.ReadInt();
-            for (int i = 0; i < _items.Length; i++)
-            {
-                bool hasItem = reader.ReadBool();
-                if (!hasItem)
-                {
-                    _items[i] = default;
-                    continue;
-                }
-                
-                int maxStack = reader.ReadInt();
-                int count = reader.ReadInt();
-                var list = new List<BaseItem>();
-                for (int j = 0; j < count; j++)
-                {
-                    uint netId = reader.ReadUInt();
-                    var item = NetworkObjectResolver.ResolveOrException<BaseItem>(netId);
-                    list.Add(item);
-                    OnItemAdded(item, i);
-                }
-
-                _items[i] = new ItemStack
-                {
-                    Items = list,
-                    MaxStack = maxStack
-                };
-            }
-            
-            ChooseAt(chooseIndex);
         }
     }
 }

@@ -2,9 +2,7 @@ using Game.Scripts.GameSystems.Factories;
 using Game.Scripts.GameSystems.Repositories;
 using Game.Scripts.GameSystems.ToolUsingSystem.Data;
 using Game.Scripts.Network.EventBus;
-using Game.Scripts.Player.Control;
-using Game.Scripts.Player.Control.Data;
-using Game.Scripts.Player.Inventory.Events;
+using Game.Scripts.Network.PayloadTransfer;
 using Game.Scripts.Player.Inventory.Items;
 using Game.Scripts.Player.Network;
 using Mirror;
@@ -16,8 +14,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
     [RequireComponent(typeof(ToolUsingSystem))]
     public class NetworkToolUsingSystem : MonoBehaviour, IToolUsingSystem
     {
-        [Inject] private INetworkServerPublishing _serverPublishing;
-        [Inject] private IPlayerActionCommandHandler _playerActions;
         [Inject] private IPlayerRepository _playerRepository;
         [Inject] private INetworkObjectFactory _factory;
         [Inject] private IEventBus _eventBus;
@@ -27,12 +23,18 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
         private void Awake()
         {
             _toolUsingSystem = GetComponent<ToolUsingSystem>();
-            _playerActions.RegisterHandler(OnUsingToolNetworkCommandReceived, () => new UsingToolNetworkCommand());
+            if (NetworkServer.active)
+                NetworkServer.RegisterHandler<UsingToolNetworkCommand>(CmdUseTool, false);
+            else 
+                NetworkClient.RegisterHandler<UsingToolNetworkCommand>(UseToolClient, false);
         }
 
         private void OnDestroy()
         {
-            _playerActions.UnregisterHandler<UsingToolNetworkCommand>();
+            if (NetworkServer.active)
+                NetworkServer.UnregisterHandler<UsingToolNetworkCommand>();
+            else
+                NetworkClient.UnregisterHandler<UsingToolNetworkCommand>();
         }
 
         public bool IsPlayerUsingTool(uint playerId) => _toolUsingSystem.IsPlayerUsingTool(playerId);
@@ -60,12 +62,12 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
             if (NetworkServer.active)
             {
                 networkCommand.Type = (int)UsingToolCommandType.Confirm;
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));
+                NetworkServerCommands.SendToOtherClients(networkCommand);
             }
             else
             {
                 networkCommand.Type = (int)UsingToolCommandType.ToServer;
-                NetworkClient.Send(PlayerActionCommand.Create(networkCommand));
+                NetworkClient.Send(networkCommand);
             }
 
             return true;
@@ -98,12 +100,12 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
             if (NetworkServer.active)
             {
                 networkCommand.Type = (int)UsingToolCommandType.Confirm;
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));
+                NetworkServerCommands.SendToOtherClients(networkCommand);
             }
             else
             {
                 networkCommand.Type = (int)UsingToolCommandType.ToServer;
-                NetworkClient.Send(PlayerActionCommand.Create(networkCommand));
+                NetworkClient.Send(networkCommand);
             }
 
             return true;
@@ -134,7 +136,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
                 false,
                 (int)UsingToolCommandType.Confirm);
             
-            _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));
+            NetworkServerCommands.SendToOtherClients(networkCommand);
             
             if (cause.Tool.Durability <= 0)
             {
@@ -143,44 +145,53 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
             }
         }
 
-        private void OnUsingToolNetworkCommandReceived(UsingToolNetworkCommand command)
+        [Server]
+        private void CmdUseTool(NetworkConnectionToClient connectionToClient, UsingToolNetworkCommand command)
         {
             var type = (UsingToolCommandType)command.Type;
-            if (type is UsingToolCommandType.ToServer && NetworkServer.active)
-            {
-                if (command.IsUsing)
-                    StartUsingToolServerCommand(command);
-                else 
-                    StopUsingToolServerCommand(command);
-            }
-            else if (type is UsingToolCommandType.Confirm && NetworkClient.active)
+            if (type is not UsingToolCommandType.ToServer)
+                return;
+            
+            var player = _playerRepository.GetPlayerObjectByConnection(connectionToClient);
+            command.PlayerId = player.Identity.netId;
+
+            if (command.IsUsing)
+                StartUsingToolServerCommand(connectionToClient, command);
+            else 
+                StopUsingToolServerCommand(command);
+        }
+
+        [Client]
+        private void UseToolClient(UsingToolNetworkCommand command)
+        {
+            var type = (UsingToolCommandType)command.Type;
+            if (type is UsingToolCommandType.Confirm)
             {
                 if (command.IsUsing)
                     StartUsingToolConfirm(command);
                 else 
                     StopUsingToolConfirm(command);
             }
-            else if (type is UsingToolCommandType.Cancel && NetworkClient.active)
+            else if (type is UsingToolCommandType.Cancel)
             {
                 CancelUsingTool(command);
             }
         }
 
-        private void StartUsingToolServerCommand(UsingToolNetworkCommand networkCommand)
+        private void StartUsingToolServerCommand(
+            NetworkConnectionToClient connection, UsingToolNetworkCommand networkCommand)
         {
             var command = ConvertCommandToLocal(networkCommand);
             
             if (!_toolUsingSystem.TryStartUsingTool(command))
             {
                 networkCommand.Type = (int)UsingToolCommandType.Cancel;
-                _serverPublishing.SendToTargetPlayer(
-                    PlayerActionCommand.Create(networkCommand), networkCommand.PlayerId);
+                connection.Send(networkCommand);
                 return;
             }
 
             networkCommand.Type = (int)UsingToolCommandType.Confirm;
-            _serverPublishing.SendToPlayersExcludeOne(
-                PlayerActionCommand.Create(networkCommand), networkCommand.PlayerId, true);
+            NetworkServerCommands.SendToOtherClients(networkCommand, connection);
         }
         
         private void StartUsingToolConfirm(UsingToolNetworkCommand networkCommand)
@@ -191,7 +202,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
         
         private void CancelUsingTool(UsingToolNetworkCommand networkCommand)
         {
-            var command = ConvertCommandToLocal(networkCommand);
             _toolUsingSystem.StopUsingTool(networkCommand.PlayerId, UsingToolCommandType.Cancel);
         }
 
@@ -201,7 +211,7 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem
                 return;
             
             networkCommand.Type = (int)UsingToolCommandType.Confirm;
-            _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.Create(networkCommand));
+            NetworkServerCommands.SendToOtherClients(networkCommand);
         }
 
         private void StopUsingToolConfirm(UsingToolNetworkCommand networkCommand)

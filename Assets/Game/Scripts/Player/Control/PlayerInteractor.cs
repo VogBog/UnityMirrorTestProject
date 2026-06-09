@@ -1,5 +1,4 @@
 using System;
-using Game.Scripts.Network.EventBus;
 using Game.Scripts.Player.Control.Data;
 using Game.Scripts.Player.Interactions;
 using Game.Scripts.Player.Network;
@@ -17,20 +16,14 @@ namespace Game.Scripts.Player.Control
         [SerializeField] private LayerMask _mask;
         
         private IPlayerControls _playerControls;
-        private INetworkServerPublishing _serverPublishing;
-        private IPlayerActionCommandHandler _playerActions;
         private PlayerMainDataComponents _player;
         
         private float _maxDistance;
 
         [Inject]
         private void Construct(
-            IPlayerActionCommandHandler playerActions,
-            INetworkServerPublishing serverPublishing,
             IPlayerControls playerControls)
         {
-            _playerActions = playerActions;
-            _serverPublishing = serverPublishing;
             _playerControls = playerControls;
             _player = GetComponent<PlayerMainDataComponents>();
 
@@ -43,17 +36,10 @@ namespace Game.Scripts.Player.Control
                 _playerControls.Interacted += OnInteract;
         }
 
-        private void Awake()
-        {
-            _playerActions.RegisterHandlerForPlayer(netIdentity, OnReceiveCommand, () => new PlayerInteractionCommand());
-        }
-
         private void OnDestroy()
         {
             if (isOwned)
                 _playerControls.Interacted -= OnInteract;
-            
-            _playerActions.UnregisterHandlerForPlayer<PlayerInteractionCommand>(netIdentity.netId);
         }
 
         public bool TryInteractLocal(
@@ -100,72 +86,50 @@ namespace Game.Scripts.Player.Control
                     if (!interactable.ClientInteractPrediction(_player))
                         return;
                     
-                    NetworkClient.Send(PlayerActionCommand.CreateForPlayer(
+                    CmdInteractServer(new PlayerInteractionCommand(
                         netId,
-                        new PlayerInteractionCommand(
-                            netId,
-                            id,
-                            _camera.forward,
-                            PlayerInteractionCommandType.ToServer)));
+                        id,
+                        _camera.forward,
+                        PlayerInteractionCommandType.ToServer));
                 }
             });
         }
 
-        private void OnReceiveCommand(PlayerInteractionCommand command)
+        [Command(requiresAuthority = false)]
+        private void CmdInteractServer(PlayerInteractionCommand command)
         {
-            if (!enabled || command.PlayerId != netId)
-                return;
-            
-            switch (command.Type)
-            {
-                case PlayerInteractionCommandType.ToServer:
-                    InteractServerCommand(command);
-                    break;
-                
-                case PlayerInteractionCommandType.Cancellation:
-                    InteractCancellationCommand(command);
-                    break;
-            }
-        }
-
-        private void InteractServerCommand(PlayerInteractionCommand command)
-        {
+            command.PlayerId = netId;
             var item = NetworkObjectResolver.Resolve<NetworkIdentity>(command.ItemId);
-            
-            var cancelCommand = PlayerActionCommand.CreateForPlayer(
-                netId,
-                new PlayerInteractionCommand(
-                    netId,
-                    command.ItemId,
-                    command.LookDirection,
-                    item?.transform.position ?? Vector3.zero,
-                    item?.transform.rotation ?? Quaternion.identity));
+
+            var cancelCommand = command;
+            cancelCommand.Type = PlayerInteractionCommandType.Cancellation;
             
             if (item == null)
             {
                 Debug.LogError($"Cannot interact. Cannot find item with id {command.ItemId}");
-                _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
+                CancelInteractionTargetRpc(cancelCommand);
             }
             
             bool interacted = TryInteractLocal(command.LookDirection, (id, interactable) =>
             {
                 if (command.ItemId != id)
                 {
-                    _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
+                    CancelInteractionTargetRpc(cancelCommand);
                     return;
                 }
 
                 if (!interactable.ServerInteract(_player))
                 {
-                    _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
+                    CancelInteractionTargetRpc(cancelCommand);
                 }
             });
 
             if (!interacted)
-                _serverPublishing.SendToTargetPlayer(cancelCommand, command.PlayerId);
+                CancelInteractionTargetRpc(cancelCommand);
         }
 
-        private void InteractCancellationCommand(PlayerInteractionCommand command)
+        [TargetRpc]
+        private void CancelInteractionTargetRpc(PlayerInteractionCommand command)
         {
             var networkIdentity = NetworkObjectResolver.ResolveOrException<NetworkIdentity>(command.ItemId);
             var interactable = networkIdentity.GetComponent<IInteractable>();

@@ -1,10 +1,9 @@
-using Game.Scripts.Network.PayloadTransfer;
 using Mirror;
 using UnityEngine;
 
 namespace Game.Scripts.GameSystems.ToolUsingSystem.Data
 {
-    public struct UsingToolNetworkCommand : NetworkMessage, INetworkSerializable
+    public struct UsingToolNetworkCommand : NetworkMessage
     {
         public uint PlayerId;
         public uint ItemId;
@@ -24,24 +23,6 @@ namespace Game.Scripts.GameSystems.ToolUsingSystem.Data
             LookDirection = lookDirection;
             IsUsing = isUsing;
             Type = type;
-        }
-
-        public void Serialize(NetworkWriter writer)
-        {
-            writer.WriteUInt(PlayerId);
-            writer.WriteUInt(ItemId);
-            writer.WriteVector3(LookDirection);
-            writer.WriteBool(IsUsing);
-            writer.WriteInt(Type);
-        }
-
-        public void Deserialize(NetworkReader reader)
-        {
-            PlayerId = reader.ReadUInt();
-            ItemId = reader.ReadUInt();
-            LookDirection = reader.ReadVector3();
-            IsUsing = reader.ReadBool();
-            Type = reader.ReadInt();
         }
     }
 }

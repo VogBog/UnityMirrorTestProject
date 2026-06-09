@@ -19,8 +19,6 @@ namespace Game.Scripts.Di
         [SerializeField] private PlayerControls _playerControls;
         [SerializeField] private ZenjectMirrorFactory _objectFactory;
         [SerializeField] private PlayerNetworkRepository _playerRepository;
-        [SerializeField] private NetworkPlayerActionsSync _networkPlayerActionsSync;
-        [SerializeField] private NetworkServerPublishing _networkServerPublishing;
         [SerializeField] private EventBus _eventBus;
         [SerializeField] private MiningSystem _miningSystem;
         [SerializeField] private NetworkToolUsingSystem _usingSystem;
@@ -37,8 +35,6 @@ namespace Game.Scripts.Di
             Container.Bind<IPlayerControls>().FromInstance(_playerControls).AsSingle();
             Container.Bind<INetworkObjectFactory>().FromInstance(_objectFactory).AsSingle();
             Container.Bind<IPlayerRepository>().FromInstance(_playerRepository).AsSingle();
-            Container.Bind<INetworkServerPublishing>().FromInstance(_networkServerPublishing).AsSingle();
-            Container.Bind<IPlayerActionCommandHandler>().FromInstance(_networkPlayerActionsSync).AsSingle();
             Container.Bind<IEventBus>().FromInstance(_eventBus).AsSingle();
             Container.Bind<IMiningSystem>().FromInstance(_miningSystem).AsSingle();
             Container.Bind<IToolUsingSystem>().FromInstance(_usingSystem).AsSingle();

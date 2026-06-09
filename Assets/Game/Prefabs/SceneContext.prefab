@@ -112,50 +112,6 @@ MonoBehaviour:
   _parentNewObjectsUnderSceneContext: 0
   _contractNames: []
   _parentContractNames: []
---- !u!1 &2139186629675492656
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6915132653938578503}
-  - component: {fileID: 2786785768991931428}
-  m_Layer: 0
-  m_Name: OfflineServices
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6915132653938578503
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2139186629675492656}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2872368035680219430}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2786785768991931428
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2139186629675492656}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 536f24d52f9941b399c8ac28184b71bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Player.Control.NetworkPlayerActionsSync
 --- !u!1 &5135749158097114212
 GameObject:
   m_ObjectHideFlags: 0
@@ -181,7 +137,6 @@ GameObject:
   - component: {fileID: 9149201623671519767}
   - component: {fileID: 6259153173702450551}
   - component: {fileID: 4774451075356638423}
-  - component: {fileID: 1254723632143090364}
   m_Layer: 0
   m_Name: Services
   m_TagString: Untagged
@@ -219,8 +174,6 @@ MonoBehaviour:
   _playerControls: {fileID: 2708001957187012528}
   _objectFactory: {fileID: 1145947202876905538}
   _playerRepository: {fileID: 3741160764625289799}
-  _networkPlayerActionsSync: {fileID: 2786785768991931428}
-  _networkServerPublishing: {fileID: 1254723632143090364}
   _eventBus: {fileID: 1431471195231421093}
   _miningSystem: {fileID: 8500261286838531278}
   _usingSystem: {fileID: 6616285941588819762}
@@ -436,18 +389,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.GameSystems.SavingWorld.Scene.SceneSaver
   _playerPrefab: {fileID: 7672038346448017459, guid: 0aad5f32f1145384ba0f6c1b4327a7e2, type: 3}
---- !u!114 &1254723632143090364
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5135749158097114212}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9e0ca57f2094bb6b4d34f26006c9873, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Scripts.Network.EventBus.NetworkServerPublishing
 --- !u!1 &5512425480666065013
 GameObject:
   m_ObjectHideFlags: 0
@@ -510,7 +451,6 @@ Transform:
   m_Children:
   - {fileID: 1811740607298431552}
   - {fileID: 7220692600904030321}
-  - {fileID: 6915132653938578503}
   - {fileID: 8576576804022341547}
   - {fileID: 4224077115154241653}
   m_Father: {fileID: 0}

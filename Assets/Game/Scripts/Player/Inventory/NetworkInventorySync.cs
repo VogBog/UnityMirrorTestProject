@@ -16,12 +16,8 @@ namespace Game.Scripts.Player.Inventory
     [RequireComponent(typeof(PlayerMainDataComponents))]
     public class NetworkInventorySync : NetworkBehaviour
     {
-        [Inject] private INetworkServerPublishing _serverPublishing;
-        [Inject] private IPlayerActionCommandHandler _playerActions;
-        
         private PlayerMainDataComponents _player;
 
-        private bool _initialized;
         private int _processing = 0;
         private ItemStack[] _lastCommited;
 
@@ -32,25 +28,6 @@ namespace Game.Scripts.Player.Inventory
             _player = GetComponent<PlayerMainDataComponents>();
         }
 
-        public override void OnStartClient() => Initialize();
-
-        public override void OnStartServer() => Initialize();
-
-        private void Initialize()
-        {
-            if (_initialized)
-                return;
-            
-            _playerActions.RegisterHandlerForPlayer(
-                netId, OnApplyInventoryDataCommandReceived, () => new ApplyInventoryDataCommand());
-            _initialized = true;
-        }
-
-        private void OnDestroy()
-        {
-            _playerActions.UnregisterHandlerForPlayer<ApplyInventoryDataCommand>(netId);
-        }
-
         public void ApplyData(ItemStack[] items)
         {
             if (_processing == 0)
@@ -58,60 +35,46 @@ namespace Game.Scripts.Player.Inventory
             
             _player.Inventory.ApplyData(items);
 
-            var command = new ApplyInventoryDataCommand(
-                _player.Identity.netId, CreateSnapshot(items), false, false);
+            var command = new ApplyInventoryDataCommand(CreateSnapshot(items));
             
             if (!NetworkServer.active)
             {
                 _processing++;
-                NetworkClient.Send(PlayerActionCommand.CreateForPlayer(netId, command));
+                CmdApplyData(command);
             }
             else
             {
-                command.IsConfirm = true;
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(netId, command));
+                ConfirmApplyingDataClientRpc(command);
             }
         }
 
-        private void OnApplyInventoryDataCommandReceived(ApplyInventoryDataCommand command)
-        {
-            if (command.PlayerId != _player.Identity.netId)
-                return;
-            
-            if (NetworkServer.active)
-                ApplyDataServerCommand(command);
-            else if (command.IsCancel)
-                CancelApplyingData(command);
-            else if (command.IsConfirm)
-                ConfirmApplyingData(command);
-        }
-
-        private void ApplyDataServerCommand(ApplyInventoryDataCommand command)
+        [Command(requiresAuthority = false)]
+        private void CmdApplyData(ApplyInventoryDataCommand command)
         {
             var snapshot = command.GetSnapshot();
             TryDeserializeSnapshotShuffling(snapshot, (success, data) =>
             {
                 if (!success)
                 {
-                    command.IsCancel = true;
-                    _serverPublishing.SendToTargetPlayer(PlayerActionCommand.CreateForPlayer(netId, command), command.PlayerId);
+                    CancelApplyingTargetRpc();
                     return;
                 }
                 
                 _player.Inventory.ApplyData(data);
             
-                command.IsConfirm = true;
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(netId, command));
+                ConfirmApplyingDataClientRpc(command);
             });
         }
 
-        private void CancelApplyingData(ApplyInventoryDataCommand command)
+        [TargetRpc]
+        private void CancelApplyingTargetRpc()
         {
             _processing--;
             _player.Inventory.ApplyData(_lastCommited);
         }
 
-        private void ConfirmApplyingData(ApplyInventoryDataCommand command)
+        [ClientRpc]
+        private void ConfirmApplyingDataClientRpc(ApplyInventoryDataCommand command)
         {
             if (_player.Identity.isOwned)
             {

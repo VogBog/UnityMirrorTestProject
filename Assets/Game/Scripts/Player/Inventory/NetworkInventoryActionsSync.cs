@@ -1,23 +1,16 @@
 using System;
 using System.Collections;
-using Game.Scripts.Network.EventBus;
-using Game.Scripts.Player.Control;
-using Game.Scripts.Player.Control.Data;
 using Game.Scripts.Player.Inventory.Items;
 using Game.Scripts.Player.Network;
 using Mirror;
 using UnityEngine;
-using Zenject;
 
 namespace Game.Scripts.Player.Inventory
 {
-    [RequireComponent(typeof(Inventory), typeof(NetworkIdentity))]
-    public class NetworkInventoryActionsSync : MonoBehaviour, IInventory
+    [RequireComponent(typeof(Inventory))]
+    public class NetworkInventoryActionsSync : NetworkBehaviour, IInventory
     {
         private IInventory _inventory;
-        private IPlayerActionCommandHandler _playerActions;
-        private INetworkServerPublishing _serverPublishing;
-        private NetworkIdentity _networkIdentity;
         
         private Coroutine _chooseItemCoroutine;
         
@@ -29,33 +22,9 @@ namespace Game.Scripts.Player.Inventory
         public const float ChooseItemFreezeTime = 0.2f;
         public const float DropForce = 4f;
 
-        [Inject]
-        private void Construct(IPlayerActionCommandHandler playerActions, INetworkServerPublishing serverPublishing)
+        private void Awake()
         {
             _inventory = GetComponent<Inventory>();
-            _networkIdentity = GetComponent<NetworkIdentity>();
-            _playerActions = playerActions;
-            _serverPublishing = serverPublishing;
-        }
-
-        private void OnEnable()
-        {
-            _playerActions.RegisterHandlerForPlayer(
-                _networkIdentity, OnAddItemToInventory, () => new AddItemToInventoryCommand());
-            _playerActions.RegisterHandlerForPlayer(
-                _networkIdentity, OnItemRemove, () => new RemoveItemFromInventoryCommand());
-            _playerActions.RegisterHandlerForPlayer(
-                _networkIdentity, OnChooseItem, () => new PlayerChooseItemCommand());
-            _playerActions.RegisterHandlerForPlayer(
-                _networkIdentity, OnDropItem, () => new PlayerDropItemCommand());
-        }
-
-        private void OnDisable()
-        {
-            _playerActions.UnregisterHandlerForPlayer<AddItemToInventoryCommand>(_networkIdentity.netId);
-            _playerActions.UnregisterHandlerForPlayer<RemoveItemFromInventoryCommand>(_networkIdentity.netId);
-            _playerActions.UnregisterHandlerForPlayer<PlayerChooseItemCommand>(_networkIdentity.netId);
-            _playerActions.UnregisterHandlerForPlayer<PlayerDropItemCommand>(_networkIdentity.netId);
         }
 
         public bool TryAdd(BaseItem item)
@@ -64,9 +33,7 @@ namespace Game.Scripts.Player.Inventory
             {
                 if (NetworkServer.active)
                 {
-                    _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
-                        _networkIdentity.netId,
-                        new AddItemToInventoryCommand(item.netId)));
+                    AddItemToInventoryClientRpc(item.netId);
                 }
                 
                 return true;
@@ -81,9 +48,7 @@ namespace Game.Scripts.Player.Inventory
             {
                 if (NetworkServer.active)
                 {
-                    _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
-                        _networkIdentity.netId,
-                        new RemoveItemFromInventoryCommand(item.netId)));
+                    RemoveItemClientRpc(item.netIdentity);
                 }
                 
                 return true;
@@ -126,80 +91,97 @@ namespace Game.Scripts.Player.Inventory
 
         public void DropItem(BaseItem item)
         {
-            if (!_networkIdentity.isOwned || item == null)
+            if (!isOwned || item == null)
                 return;
 
             if (!_inventory.TryRemove(item))
                 return;
 
-            var command = new PlayerDropItemCommand(
-                _networkIdentity.netId,
-                item.netId,
-                _networkIdentity.transform.forward);
-            
-            item.NetworkRigidbody.SetLinearVelocity(command.LookDirection * DropForce);
+            var lookDirection = transform.forward;
+            item.NetworkRigidbody.SetLinearVelocity(lookDirection * DropForce);
 
-            if (NetworkServer.active)
+            if (isServer)
             {
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
-                    _networkIdentity.netId,
-                    command));
+                DropItemClientRpc(item.netIdentity, lookDirection);
             }
             else
             {
-                NetworkClient.Send(PlayerActionCommand.CreateForPlayer(_networkIdentity.netId, command));
+                CmdDropItem(item.netIdentity, lookDirection);
             }
         }
 
-        private void OnAddItemToInventory(AddItemToInventoryCommand command)
+        [ClientRpc]
+        private void AddItemToInventoryClientRpc(uint itemId)
         {
-            StartCoroutine(AddItemRoutine(command.ItemId));
+            StartCoroutine(AddItemRoutine(itemId));
         }
 
-        private void OnItemRemove(RemoveItemFromInventoryCommand command)
+        [ClientRpc]
+        private void RemoveItemClientRpc(NetworkIdentity itemIdentity)
         {
-            var item = NetworkObjectResolver.Resolve<BaseItem>(command.ItemId);
+            var item = itemIdentity.GetComponent<BaseItem>();
             _inventory.TryRemove(item); //If item is null, it will remove null data in inventory
         }
 
-        private void OnDropItem(PlayerDropItemCommand command)
+        [Command(requiresAuthority = false)]
+        private void CmdDropItem(NetworkIdentity itemIdentity, Vector3 lookDirection)
         {
-            var item = NetworkObjectResolver.Resolve<BaseItem>(command.ItemId);
+            var item = itemIdentity.GetComponent<BaseItem>();
             _inventory.TryRemove(item); //If item is null, it will remove null data in inventory
 
             if (item != null)
             {
-                item.NetworkRigidbody.SetLinearVelocity(command.LookDirection * DropForce);
+                item.NetworkRigidbody.SetLinearVelocity(lookDirection * DropForce);
             }
+            
+            DropItemClientRpc(itemIdentity, lookDirection);
+        }
 
-            if (NetworkServer.active)
+        [ClientRpc]
+        private void DropItemClientRpc(NetworkIdentity itemIdentity, Vector3 lookDirection)
+        {
+            var item = itemIdentity.GetComponent<BaseItem>();
+            bool removed = _inventory.TryRemove(item); //If item is null, it will remove null data in inventory
+
+            if (item != null && removed)
             {
-                _serverPublishing.SendToPlayersExcludeOne(
-                    PlayerActionCommand.CreateForPlayer(_networkIdentity.netId, command),
-                    _networkIdentity.netId,
-                    true);
+                item.NetworkRigidbody.SetLinearVelocity(lookDirection * DropForce);
             }
         }
 
-        private void OnChooseItem(PlayerChooseItemCommand command)
+        [Command(requiresAuthority = false)]
+        private void CmdChooseItem(uint itemId, int index)
         {
-            if (_inventory.ChosenIndex == command.Index &&
-                _inventory.ChosenObject?.NetworkIdentity.netId == command.ItemId)
+            OnChooseItem(itemId, index);
+        }
+
+        [ClientRpc(includeOwner = false)]
+        private void ChooseItemClientRpc(uint itemId, int index)
+        {
+            if (isServer)
                 return;
             
-            _inventory.ChooseAt(command.Index);
+            OnChooseItem(itemId, index);
+        }
 
-            if (command.ItemId != 0 && (_inventory.ChosenObject?.netId ?? 0) != command.ItemId)
+        private void OnChooseItem(uint itemId, int index)
+        {
+            if (_inventory.ChosenIndex == index &&
+                _inventory.ChosenObject?.NetworkIdentity.netId == itemId)
+                return;
+            
+            _inventory.ChooseAt(index);
+
+            if (itemId != 0 && (_inventory.ChosenObject?.netId ?? 0) != itemId)
             {
-                var item = NetworkObjectResolver.Resolve<BaseItem>(command.ItemId);
+                var item = NetworkObjectResolver.Resolve<BaseItem>(itemId);
                 if (item != null && _inventory.Contains(item))
                     _inventory.ChooseAt(_inventory.GetIndex(item));
             }
 
-            if (NetworkServer.active && command.IsServerCommandForConfirm)
+            if (NetworkServer.active)
             {
-                command.IsServerCommandForConfirm = false;
-                _serverPublishing.SendToPlayersExcludeOne(command, command.PlayerId, true);
+                ChooseItemClientRpc(itemId, index);
             }
         }
 
@@ -220,10 +202,10 @@ namespace Game.Scripts.Player.Inventory
                 yield break;
             }
             
-            if (item.OwnerPlayer != null && item.OwnerPlayer.Identity == _networkIdentity)
+            if (item.OwnerPlayer != null && item.OwnerPlayer.Identity == netIdentity)
                 yield break;
 
-            if (item.OwnerPlayer != null && item.OwnerPlayer.Identity != _networkIdentity)
+            if (item.OwnerPlayer != null && item.OwnerPlayer.Identity != netIdentity)
             {
                 item.OwnerPlayer.Inventory.TryRemove(item);
             }
@@ -235,25 +217,13 @@ namespace Game.Scripts.Player.Inventory
         {
             yield return new WaitForSeconds(ChooseItemFreezeTime);
 
-            if (NetworkServer.active)
+            if (isServer)
             {
-                _serverPublishing.SendToPlayersExcludeServer(PlayerActionCommand.CreateForPlayer(
-                    _networkIdentity.netId,
-                    new PlayerChooseItemCommand(
-                        _networkIdentity.netId,
-                        _inventory.ChosenObject?.netId ?? 0,
-                        index,
-                        false
-                        )));
+                ChooseItemClientRpc(_inventory.ChosenObject?.netId ?? 0, index);
             }
             else
             {
-                NetworkClient.Send(PlayerActionCommand.CreateForPlayer(_networkIdentity.netId,
-                    new PlayerChooseItemCommand(
-                        _networkIdentity.netId,
-                        _inventory.ChosenObject?.netId ?? 0,
-                        index,
-                        true)));
+                CmdChooseItem(_inventory.ChosenObject?.netId ?? 0, index);
             }
         }
     }

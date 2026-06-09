@@ -1,46 +1,24 @@
-using Game.Scripts.Network.PayloadTransfer;
 using Mirror;
 
 namespace Game.Scripts.Player.Inventory.Snapshots
 {
-    public struct ApplyInventoryDataCommand : NetworkMessage, INetworkSerializable
+    public struct ApplyInventoryDataCommand : NetworkMessage
     {
-        public uint PlayerId;
-        public bool IsCancel;
-        public bool IsConfirm;
-        public NetworkPayload Payload;
+        public byte[] Payload;
 
-        public ApplyInventoryDataCommand(uint playerId, InventorySnapshot snapshot, bool isCancel, bool isConfirm)
+        public ApplyInventoryDataCommand(InventorySnapshot snapshot)
         {
-            PlayerId = playerId;
-            
-            Payload = new NetworkPayload();
-            Payload.Serialize(snapshot);
-            
-            IsCancel = isCancel;
-            IsConfirm = isConfirm;
+            var writer = new NetworkWriter();
+            snapshot.Serialize(writer);
+            Payload = writer.ToArray();
         }
 
         public InventorySnapshot GetSnapshot()
         {
             var result = new InventorySnapshot();
-            return Payload.Deserialize(result);
-        }
-
-        public void Serialize(NetworkWriter writer)
-        {
-            writer.WriteUInt(PlayerId);
-            writer.WriteBool(IsCancel);
-            writer.WriteBool(IsConfirm);
-            writer.WriteBytesAndSize(Payload.Data);
-        }
-
-        public void Deserialize(NetworkReader reader)
-        {
-            PlayerId = reader.ReadUInt();
-            IsCancel = reader.ReadBool();
-            IsConfirm = reader.ReadBool();
-            Payload.Data = reader.ReadBytesAndSize();
+            var reader = new NetworkReader(Payload);
+            result.Deserialize(reader);
+            return result;
         }
     }
 }

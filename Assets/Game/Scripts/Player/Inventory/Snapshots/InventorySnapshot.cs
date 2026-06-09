@@ -1,9 +1,8 @@
-using Game.Scripts.Network.PayloadTransfer;
 using Mirror;
 
 namespace Game.Scripts.Player.Inventory.Snapshots
 {
-    public struct InventorySnapshot : NetworkMessage, INetworkSerializable
+    public struct InventorySnapshot : NetworkMessage
     {
         public ItemStackSnapshot[] Items;
 
